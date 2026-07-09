@@ -1,0 +1,9 @@
+# SPA routing - redirect all requests to index.html
+/* /index.html 200
+
+# API routes - don't redirect if you have API endpoints
+/api/* /api/:splat 200
+
+# Assets - serve directly
+/images/* /images/:splat 200
+/fonts/* /fonts/:splat 200
