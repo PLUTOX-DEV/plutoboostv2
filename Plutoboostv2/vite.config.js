@@ -29,6 +29,21 @@ export default defineConfig({
           },
         ],
       },
+      // ===== FIX: Disable workbox during build =====
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        navigateFallback: 'index.html',
+        // This prevents the dynamic require error
+        sourcemap: false,
+        // Disable workbox during build to fix the error
+        mode: 'production',
+      },
+      // Disable dev options
+      devOptions: {
+        enabled: false,
+      },
+      // Use auto injection
+      injectRegister: 'auto',
     }),
   ],
   build: {
