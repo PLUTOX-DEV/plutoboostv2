@@ -2,13 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'manifest.webmanifest'],
       manifest: {
         name: 'PlutoBoost',
         short_name: 'PlutoBoost',
@@ -29,21 +28,21 @@ export default defineConfig({
           },
         ],
       },
-      // ===== FIX: Disable workbox during build =====
+      // ===== FIX: Use injectManifest strategy =====
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.js',
+      injectManifest: {
+        injectionPoint: undefined,
+      },
+      // Disable workbox if still causing issues
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         navigateFallback: 'index.html',
-        // This prevents the dynamic require error
-        sourcemap: false,
-        // Disable workbox during build to fix the error
-        mode: 'production',
       },
-      // Disable dev options
       devOptions: {
         enabled: false,
       },
-      // Use auto injection
-      injectRegister: 'auto',
     }),
   ],
   build: {
