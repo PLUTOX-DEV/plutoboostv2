@@ -28,8 +28,8 @@ import {
   ChevronRight,
   Facebook,
   Twitch,
-  Heart, // Added Heart
-  Cloud, // Added Cloud
+  Heart,
+  Cloud,
   Sun,
   Moon,
   Menu,
@@ -43,7 +43,7 @@ import {
   Share2,
 } from "lucide-react";
 import Navbar from "../components/Navbar";
-import HeroImage from "/images/rock2.png";
+import HeroImage from "/images/px.png";
 
 // Custom TikTok Icon Component
 const TikTokIcon = ({ className, size = 24, ...props }) => (
@@ -76,16 +76,7 @@ const staggerContainer = {
 
 /* ===================== HERO ===================== */
 const Hero = () => {
-  const [showImage, setShowImage] = useState(false);
   const [currentStat, setCurrentStat] = useState(0);
-
-  useEffect(() => {
-    const mql = window.matchMedia('(min-width: 1025px)');
-    const update = () => setShowImage(mql.matches);
-    update();
-    mql.addEventListener?.('change', update);
-    return () => mql.removeEventListener?.('change', update);
-  }, []);
 
   const stats = [
     { value: "50K+", label: "Happy Users" },
@@ -132,22 +123,20 @@ const Hero = () => {
         ))}
       </div>
 
-      {/* Hero Image */}
-      {showImage && (
-        <div className="absolute inset-0 z-[2]">
-          <img
-            src={HeroImage}
-            alt="Hero Background"
-            className="w-full h-full object-cover scale-105 md:scale-110 opacity-80"
-            loading="lazy"
-          />
-        </div>
-      )}
+      {/* Hero Image - Now shows on ALL devices with responsive styling */}
+      <div className="absolute inset-0 z-[2]">
+        <img
+          src={HeroImage}
+          alt="Hero Background - Social Media Growth Platform"
+          className="w-full h-full object-cover object-center sm:object-center md:object-center opacity-60 sm:opacity-70 md:opacity-80 lg:opacity-70"
+          loading="lazy"
+        />
+        {/* Gradient overlay for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0B0E2A]/95 via-[#0B0E2A]/85 to-[#0B0E2A]/95" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0B0E2A]/50 to-transparent hidden lg:block" />
+      </div>
 
-      {/* Gradient Overlay */}
-      <div className="absolute inset-0 z-[3] bg-gradient-to-b from-[#0B0E2A]/95 via-[#0B0E2A]/80 to-[#0B0E2A]" />
-
-      {/* Floating Icons */}
+      {/* Floating Icons - Desktop only */}
       <motion.div
         animate={{ y: [0, -15, 0] }}
         transition={{ repeat: Infinity, duration: 4 }}

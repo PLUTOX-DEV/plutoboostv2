@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar";
 import { DashboardSkeleton } from "../components/Skeletons";
 import UserContext from "../context/UserContext";
 import ConfirmationModal from "../components/ConfirmationModal";
-import api from "../api"; 
+import api from "../api";
 import {
   Wallet,
   Youtube,
@@ -23,6 +23,12 @@ import {
   RefreshCw,
   Minus,
   Plus,
+  Send,
+  Clock,
+  Crown,
+  Layers,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 const fadeInUp = {
@@ -31,12 +37,17 @@ const fadeInUp = {
   transition: { duration: 0.5 }
 };
 
+// Default description for all services
+const DEFAULT_SERVICE_DESCRIPTION = `~ This service does NOT work for private accounts. No refunds will be issued for private account orders. ~
+~ No refill service available for this package. ~
+All orders are final. Please ensure your account is public before ordering.`;
+
 export default function Dashboard() {
   const { balance, setBalance, placeOrder } = useContext(UserContext);
-  const [allServices, setAllServices] = useState([]); 
-  const [platforms, setPlatforms] = useState([]);
+  const [allServices, setAllServices] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedService, setSelectedService] = useState(null);
-  const [selectedPlatform, setSelectedPlatform] = useState(null); 
   const [qty, setQty] = useState(100);
   const [link, setLink] = useState("");
   const [linkPlaceholder, setLinkPlaceholder] = useState("https://...");
@@ -48,10 +59,6 @@ export default function Dashboard() {
   const [systemStatus, setSystemStatus] = useState({ status: 'checking', message: 'Checking...' });
   const [recentOrders, setRecentOrders] = useState([]);
   const [userStats, setUserStats] = useState({ totalOrders: 0 });
-
-  const platformMap = { youtube: Youtube, instagram: Instagram, twitter: Twitter, facebook: Facebook, tiktok: Music };
-  const colorMap = { youtube: "text-red-500", instagram: "text-pink-500", twitter: "text-sky-400", facebook: "text-blue-600", tiktok: "text-black" };
-  const bgMap = { youtube: "bg-red-500/10", instagram: "bg-pink-500/10", twitter: "bg-sky-400/10", facebook: "bg-blue-600/10", tiktok: "bg-gray-800/10" };
 
   useEffect(() => {
     const mql = window.matchMedia('(max-width: 1024px)');
@@ -67,6 +74,7 @@ export default function Dashboard() {
     if (lower.includes('like') || lower.includes('reaction')) return MessageCircle;
     if (lower.includes('view') || lower.includes('play')) return Eye;
     if (lower.includes('comment') || lower.includes('reply') || lower.includes('retweet') || lower.includes('share')) return TrendingUp;
+    if (lower.includes('premium') || lower.includes('pro')) return Crown;
     return Users;
   }, []);
 
@@ -74,31 +82,31 @@ export default function Dashboard() {
     const initDashboardData = async () => {
       setIsLoading(true);
       setSystemStatus({ status: 'checking', message: 'Checking...' });
-      
+
       try {
         const [servicesRes, ordersRes, analyticsRes] = await Promise.all([
           api.get('/services'),
           api.get('/user/orders'),
           api.get('/analytics')
         ]);
-  
+
         if (servicesRes.data) {
           const rawData = servicesRes.data;
           setAllServices(rawData);
-          const uniquePlatforms = [...new Set(rawData.map(s => s.platform))];
-          const platformData = uniquePlatforms.map(p => ({ 
-            name: p.charAt(0).toUpperCase() + p.slice(1), 
-            icon: platformMap[p.toLowerCase()] || Zap, 
-            color: colorMap[p.toLowerCase()] || "text-gray-400", 
-            bg: bgMap[p.toLowerCase()] || "bg-gray-500/10" 
-          }));
-          setPlatforms(platformData);
-          if (platformData.length > 0) {
-            setSelectedPlatform(platformData[0]); 
+          const uniqueCategories = [...new Set(rawData.map(s => s.category || 'General'))];
+          setCategories(uniqueCategories);
+          if (uniqueCategories.length > 0) {
+            setSelectedCategory(uniqueCategories[0]);
+            const firstService = rawData.find(s => (s.category || 'General') === uniqueCategories[0]);
+            // Add default description if service doesn't have one
+            if (firstService && !firstService.description) {
+              firstService.description = DEFAULT_SERVICE_DESCRIPTION;
+            }
+            setSelectedService(firstService || null);
           }
           setSystemStatus({ status: 'operational', message: 'Operational' });
         }
-  
+
         if (ordersRes.data) {
           const orders = ordersRes.data.slice(0, 3).map(order => ({
             platform: order.platform ? order.platform.charAt(0).toUpperCase() + order.platform.slice(1) : 'N/A',
@@ -108,11 +116,11 @@ export default function Dashboard() {
           }));
           setRecentOrders(orders);
         }
-  
+
         if (analyticsRes.data) {
           setUserStats(analyticsRes.data.stats || { totalOrders: 0 });
         }
-  
+
       } catch (err) {
         console.error('Failed initialization:', err);
         setServiceError("Could not load services from our provider. Please try again later.");
@@ -125,26 +133,25 @@ export default function Dashboard() {
   }, []);
 
   const visibleServices = useMemo(() => {
-    if (!selectedPlatform || allServices.length === 0) return [];
-    
-    const platformKey = selectedPlatform.name.toLowerCase().replace('x (', '').replace(')', '');
+    if (!selectedCategory || allServices.length === 0) return [];
+
     return allServices
-      .filter(s => s.platform === platformKey)
+      .filter(s => (s.category || 'General') === selectedCategory)
       .map(s => ({
-        id: s.service,
-        name: s.name, 
-        price: s.price || 1,
-        icon: getServiceIcon(s.name)
+        ...s,
+        icon: getServiceIcon(s.name),
+        // Add default description if service doesn't have one
+        description: s.description || DEFAULT_SERVICE_DESCRIPTION
       }));
-  }, [selectedPlatform, allServices, getServiceIcon]);
+  }, [selectedCategory, allServices, getServiceIcon]);
 
   useEffect(() => {
-    if (visibleServices.length > 0) {
+    if (visibleServices.length > 0 && (!selectedService || selectedService.category !== selectedCategory)) {
       setSelectedService(visibleServices[0]);
-    } else {
+    } else if (visibleServices.length === 0) {
       setSelectedService(null);
     }
-  }, [visibleServices]);
+  }, [visibleServices, selectedCategory]);
 
   useEffect(() => {
     if (selectedService) {
@@ -163,7 +170,7 @@ export default function Dashboard() {
 
   const openConfirmationModal = () => {
     if (!link) return alert("Please enter a link");
-    if (!selectedService || !selectedPlatform) return alert("Please select a platform and service.");
+    if (!selectedService || !selectedCategory) return alert("Please select a category and service.");
     setIsModalOpen(true);
   };
 
@@ -174,11 +181,11 @@ export default function Dashboard() {
   const handleConfirmOrder = async () => {
     setIsLoading(true);
     try {
-      const result = await placeOrder(selectedService, selectedPlatform.name.toLowerCase(), qty, link);
-      setBalance(result.newBalance); 
+      const result = await placeOrder(selectedService, selectedCategory?.toLowerCase() || selectedService?.category?.toLowerCase(), qty, link);
+      setBalance(result.newBalance);
       setNotification({ show: true, message: "Order placed successfully!", type: 'success' });
       setLink("");
-      
+
       const newOrder = result.order;
       setRecentOrders(prev => [
         {
@@ -249,11 +256,11 @@ export default function Dashboard() {
         {/* QUICK STATS */}
         <motion.div
           {...(isMobileView ? {} : { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { delay: 0.1 } })}
-          className="grid grid-cols-1 xs:grid-cols-2 gap-3 sm:gap-5"
+          className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-5"
         >
           <StatCard icon={Wallet} label="Balance" value={`₦${balance.toLocaleString()}`} color="purple" />
           <StatCard icon={ShoppingCart} label="Orders" value={userStats.totalOrders.toString()} color="indigo" />
-          <StatCard icon={Zap} label="Platforms" value={`${platforms.length} available`} color="emerald" className="xs:col-span-2" />
+          <StatCard icon={Zap} label="Categories" value={`${categories.length} available`} color="emerald" className="xs:col-span-2 lg:col-span-1" />
         </motion.div>
 
         {/* ORDER GRID */}
@@ -277,49 +284,25 @@ export default function Dashboard() {
               </span>
             </div>
 
-            {/* PLATFORM SELECT - HORIZONTAL SCROLL ON MOBILE */}
+            {/* CATEGORY SELECT */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-semibold text-white">Select Platform</label>
-                <span className="text-xs text-gray-400">Swipe to browse</span>
-              </div>
-              
-              {/* Mobile: Horizontal Scroll */}
-              <div className="sm:hidden overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none snap-x snap-mandatory">
-                <div className="flex gap-2">
-                  {platforms.map((p) => (
-                    <button
-                      key={p.name}
-                      onClick={() => setSelectedPlatform(p)}
-                      className={`group flex shrink-0 snap-start flex-col items-center justify-center gap-1.5 rounded-2xl border px-4 py-3 min-w-[80px] w-[80px] min-h-[68px] text-sm transition-all duration-300 active:scale-95 ${
-                        selectedPlatform && selectedPlatform.name === p.name
-                          ? `${p.bg} border-current ${p.color} shadow-glow-sm`
-                          : "bg-black/30 border-white/10 text-gray-300 hover:border-white/20"
-                      }`}
-                    >
-                      <p.icon size={22} className={selectedPlatform && selectedPlatform.name === p.name ? p.color : 'text-gray-300'} />
-                      <span className="text-[10px] font-medium truncate max-w-full">{p.name}</span>
-                    </button>
-                  ))}
-                </div>
+                <label className="text-sm font-semibold text-white">Category</label>
+                <span className="text-xs text-gray-400">Choose your service category</span>
               </div>
 
-              {/* Desktop: Grid Layout */}
-              <div className="hidden sm:grid sm:grid-cols-4 gap-2 sm:gap-3">
-                {platforms.map((p) => (
-                  <button
-                    key={p.name}
-                    onClick={() => setSelectedPlatform(p)}
-                    className={`group flex flex-col items-center justify-center gap-1.5 rounded-2xl border px-3 py-3 min-h-[68px] text-sm transition-all duration-300 active:scale-95 ${
-                      selectedPlatform && selectedPlatform.name === p.name
-                        ? `${p.bg} border-current ${p.color} shadow-glow-sm`
-                        : "bg-black/30 border-white/10 text-gray-300 hover:border-white/20"
-                    }`}
-                  >
-                    <p.icon size={20} className={selectedPlatform && selectedPlatform.name === p.name ? p.color : 'text-gray-300'} />
-                    <span className="text-[10px] sm:text-sm font-medium truncate max-w-full">{p.name}</span>
-                  </button>
-                ))}
+              <div>
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="input-glass w-full min-h-[44px] text-sm"
+                >
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
               </div>
             </section>
 
@@ -327,64 +310,64 @@ export default function Dashboard() {
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-semibold text-white">Service Type</label>
-                <span className="text-xs text-gray-400">{visibleServices.length} options</span>
+                <span className="text-xs text-gray-400">{visibleServices.length} option{visibleServices.length === 1 ? '' : 's'}</span>
               </div>
+
               {serviceError ? (
                 <div className="rounded-2xl bg-red-500/10 p-4 text-center text-red-300 text-sm">{serviceError}</div>
               ) : visibleServices.length > 0 ? (
-                <>
-                  {/* Mobile: Horizontal Scroll */}
-                  <div className="sm:hidden overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none snap-x snap-mandatory">
-                    <div className="flex gap-2">
+                <div className="space-y-3">
+                  <div>
+                    <select
+                      value={selectedService?.id || ''}
+                      onChange={(e) => setSelectedService(visibleServices.find(s => s.id === e.target.value) || null)}
+                      className="input-glass w-full min-h-[44px] text-sm"
+                    >
                       {visibleServices.map((s) => (
-                        <button
-                          key={s.name}
-                          onClick={() => setSelectedService(s)}
-                          className={`flex flex-col items-center gap-1.5 rounded-2xl border p-3 min-w-[140px] max-w-[160px] snap-start text-center transition-all duration-300 active:scale-[0.99] ${
-                            selectedService && selectedService.name === s.name
-                              ? 'bg-purple-600/20 border-purple-500 text-purple-200 shadow-glow-sm'
-                              : 'bg-black/30 border-white/10 text-gray-300 hover:border-white/20'
-                          }`}
-                        >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/5">
-                            <s.icon size={18} />
-                          </div>
-                          <div className="min-w-0 w-full">
-                            <p className="font-medium text-xs truncate">{s.name}</p>
-                            <p className="text-[10px] text-purple-400/70">₦{s.price}/unit</p>
-                          </div>
-                        </button>
+                        <option key={s.id} value={s.id}>
+                          {s.name} — ₦{s.price.toFixed(2)} per unit
+                        </option>
                       ))}
-                    </div>
+                    </select>
                   </div>
 
-                  {/* Desktop: Grid Layout */}
-                  <div className="hidden sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-3">
-                    {visibleServices.map((s) => (
-                      <button
-                        key={s.name}
-                        onClick={() => setSelectedService(s)}
-                        className={`flex items-center gap-2 sm:gap-3 rounded-2xl border p-3 min-h-[52px] sm:min-h-[56px] text-left transition-all duration-300 active:scale-[0.99] sm:hover:scale-[1.01] ${
-                          selectedService && selectedService.name === s.name
-                            ? 'bg-purple-600/20 border-purple-500 text-purple-200 shadow-glow-sm'
-                            : 'bg-black/30 border-white/10 text-gray-300 hover:border-white/20'
-                        }`}
-                      >
-                        <div className="flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl bg-white/5">
-                          <s.icon size={17} className="sm:w-[18px] sm:h-[18px]" />
+                  {/* Selected service detail panel with description */}
+                  {selectedService && (
+                    <div className="rounded-2xl border border-white/10 bg-black/30 p-4 space-y-3">
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Service</p>
+                        <p className="text-sm font-medium">{selectedService.name}</p>
+                      </div>
+                      
+                      {/* DESCRIPTION SECTION - Always shows with default or custom description */}
+                      <div>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-wider">Important Information</p>
+                        <div className="text-xs sm:text-sm text-gray-300 whitespace-pre-wrap mt-1">
+                          {(selectedService.description || DEFAULT_SERVICE_DESCRIPTION).split('\n').map((line, i) => (
+                            <p key={i} className={line.includes('~') ? 'text-yellow-400/80 font-medium' : ''}>
+                              {line.replace(/~/g, '').trim()}
+                            </p>
+                          ))}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-xs sm:text-sm truncate">{s.name}</p>
-                          <p className="text-[10px] sm:text-xs text-purple-400/70">₦{s.price}/unit</p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 text-sm text-gray-400">
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider">Category</p>
+                          <p className="text-white font-medium">{selectedService.category || 'General'}</p>
                         </div>
-                      </button>
-                    ))}
-                  </div>
-                </>
+                        <div>
+                          <p className="text-[10px] uppercase tracking-wider">Price unit</p>
+                          <p className="text-white font-medium">{selectedService.rateUnit === 'per_1000' ? 'Per 1000' : 'Per unit'}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div className="rounded-2xl bg-white/5 p-6 text-center text-gray-400 text-sm">
-                  <p>No services available for this platform.</p>
-                  <p className="text-xs mt-1 text-gray-500">Please select a different platform</p>
+                  <p>No services available for this category.</p>
+                  <p className="text-xs mt-1 text-gray-500">Please select a different category</p>
                 </div>
               )}
             </section>
@@ -392,7 +375,10 @@ export default function Dashboard() {
             {/* LINK & QUANTITY */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-white">Post / Profile Link</label>
+                <label className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Send size={14} className="text-purple-400" />
+                  Post / Profile Link
+                </label>
                 <input
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
@@ -409,7 +395,7 @@ export default function Dashboard() {
                     type="button"
                     onClick={() => adjustQty(-10)}
                     aria-label="Decrease quantity"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-white active:scale-95 transition"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-white active:scale-95 transition hover:border-white/20"
                   >
                     <Minus size={16} />
                   </button>
@@ -425,7 +411,7 @@ export default function Dashboard() {
                     type="button"
                     onClick={() => adjustQty(10)}
                     aria-label="Increase quantity"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-white active:scale-95 transition"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/30 text-white active:scale-95 transition hover:border-white/20"
                   >
                     <Plus size={16} />
                   </button>
@@ -437,9 +423,14 @@ export default function Dashboard() {
           {/* SUMMARY PANEL */}
           <div className="hidden xl:flex glass card-hover rounded-2xl p-4 sm:p-6 flex-col justify-between gap-6">
             <div>
-              <h2 className="text-lg font-semibold mb-3">Order Summary</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20">
+                  <Layers size={16} className="text-purple-400" />
+                </div>
+                <h2 className="text-lg font-semibold">Order Summary</h2>
+              </div>
               <div className="space-y-4">
-                <SummaryRow label="Platform" value={selectedPlatform ? selectedPlatform.name : 'None selected'} icon={selectedPlatform?.icon} />
+                <SummaryRow label="Category" value={selectedCategory || 'None selected'} />
                 <SummaryRow label="Service" value={selectedService ? selectedService.name : 'Select a service'} icon={selectedService?.icon} />
                 <SummaryRow label="Quantity" value={qty.toLocaleString()} />
                 <div className="border-t border-white/10 pt-4">
@@ -451,7 +442,7 @@ export default function Dashboard() {
             <button
               onClick={openConfirmationModal}
               disabled={isLoading || !selectedService}
-              className="btn-primary w-full mt-4 flex items-center justify-center gap-2 disabled:opacity-50 min-h-[48px]"
+              className="btn-primary w-full mt-4 flex items-center justify-center gap-2 disabled:opacity-50 min-h-[52px] shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40"
               aria-busy={isLoading}
             >
               {isLoading ? <RefreshCw size={18} className="animate-spin" /> : 'Place Order'}
@@ -461,9 +452,14 @@ export default function Dashboard() {
 
           {/* Compact summary card shown inline on mobile/tablet */}
           <div className="glass card-hover rounded-2xl p-4 sm:p-6 space-y-4 xl:hidden">
-            <h2 className="text-lg font-semibold">Order Summary</h2>
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20">
+                <Layers size={16} className="text-purple-400" />
+              </div>
+              <h2 className="text-lg font-semibold">Order Summary</h2>
+            </div>
             <div className="space-y-3">
-              <SummaryRow label="Platform" value={selectedPlatform ? selectedPlatform.name : 'None selected'} icon={selectedPlatform?.icon} />
+              <SummaryRow label="Category" value={selectedCategory || 'None selected'} />
               <SummaryRow label="Service" value={selectedService ? selectedService.name : 'Select a service'} icon={selectedService?.icon} />
               <SummaryRow label="Quantity" value={qty.toLocaleString()} />
               <div className="border-t border-white/10 pt-3">
@@ -476,14 +472,28 @@ export default function Dashboard() {
         {/* HISTORIC ORDERS */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass card-hover rounded-2xl p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base sm:text-lg font-semibold">Recent Orders</h2>
-            <a href="/orders" className="text-sm text-purple-400 hover:text-purple-300 transition">View All</a>
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20">
+                <Clock size={16} className="text-purple-400" />
+              </div>
+              <h2 className="text-base sm:text-lg font-semibold">Recent Orders</h2>
+            </div>
+            <a href="/orders" className="text-sm text-purple-400 hover:text-purple-300 transition flex items-center gap-1 group">
+              View All
+              <ArrowUpRight size={14} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition" />
+            </a>
           </div>
           <div className="space-y-3">
             {recentOrders.length > 0 ? recentOrders.map((order, i) => (
               <OrderRow key={i} platform={order.platform} service={order.service} qty={order.qty.toString()} status={order.status} />
             )) : (
-              <div className="text-center text-gray-400 py-4 text-sm">No recent orders</div>
+              <div className="text-center text-gray-400 py-8 text-sm">
+                <div className="w-12 h-12 mx-auto rounded-full bg-white/5 flex items-center justify-center mb-3">
+                  <ShoppingCart size={24} className="text-gray-500" />
+                </div>
+                <p>No recent orders</p>
+                <p className="text-xs text-gray-500 mt-1">Start boosting your social media today</p>
+              </div>
             )}
           </div>
         </motion.div>
@@ -494,7 +504,7 @@ export default function Dashboard() {
           onConfirm={handleConfirmOrder}
           loading={isLoading}
           orderDetails={{
-            platform: selectedPlatform?.name,
+            platform: selectedCategory || selectedService?.category,
             service: selectedService?.name,
             quantity: qty,
             total: `₦${Number(total).toLocaleString()}`
@@ -502,7 +512,7 @@ export default function Dashboard() {
         />
 
         {/* STICKY MOBILE ORDER BAR */}
-        <div className="xl:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-black/80 backdrop-blur-lg px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        <div className="xl:hidden fixed bottom-0 left-0 right-0 z-30 border-t border-white/10 bg-black/90 backdrop-blur-lg px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-3 max-w-3xl mx-auto">
             <div className="min-w-0 flex-1">
               <p className="text-[11px] uppercase tracking-wide text-gray-400">Total</p>
@@ -511,7 +521,7 @@ export default function Dashboard() {
             <button
               onClick={openConfirmationModal}
               disabled={isLoading || !selectedService}
-              className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 min-h-[52px] text-sm font-semibold px-4"
+              className="btn-primary flex-1 flex items-center justify-center gap-2 disabled:opacity-50 min-h-[52px] text-sm font-semibold px-4 shadow-lg shadow-purple-500/25"
               aria-busy={isLoading}
             >
               {isLoading ? <RefreshCw size={18} className="animate-spin" /> : 'Place Order'}
@@ -531,14 +541,22 @@ function StatCard({ icon: Icon, label, value, color, className = "" }) {
     indigo: "from-indigo-500/20 to-indigo-600/10 border-indigo-500/30",
     emerald: "from-emerald-500/20 to-emerald-600/10 border-emerald-500/30"
   };
+
+  const iconColors = {
+    purple: "text-purple-400",
+    indigo: "text-indigo-400",
+    emerald: "text-emerald-400",
+  };
+
   return (
-    <div className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border ${colors[color]} bg-gradient-to-br p-4 sm:p-5 shadow-glow-sm ${className}`}> 
-      <div className="flex items-start justify-between gap-3 sm:gap-4">
+    <div className={`relative overflow-hidden rounded-2xl sm:rounded-3xl border ${colors[color]} bg-gradient-to-br p-4 sm:p-5 shadow-glow-sm hover:shadow-glow-md transition-all duration-300 ${className}`}>
+      <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-current/5 to-transparent rounded-full blur-2xl" />
+      <div className="flex items-start justify-between gap-3 sm:gap-4 relative">
         <div className="min-w-0">
           <p className="text-[10px] sm:text-xs uppercase tracking-[0.2em] text-gray-400 truncate">{label}</p>
-          <p className="text-base sm:text-xl lg:text-2xl font-semibold text-white mt-1 sm:mt-2 truncate">{value}</p>
+          <p className="text-base sm:text-xl lg:text-2xl font-bold text-white mt-1 sm:mt-2 truncate">{value}</p>
         </div>
-        <div className="flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl sm:rounded-3xl bg-white/10 text-white">
+        <div className={`flex h-10 w-10 sm:h-12 sm:w-12 shrink-0 items-center justify-center rounded-2xl sm:rounded-3xl bg-black/20 ${iconColors[color]}`}>
           <Icon size={18} className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
       </div>
@@ -558,19 +576,32 @@ function SummaryRow({ label, value, highlight, icon: Icon }) {
 }
 
 function OrderRow({ platform, service, qty, status }) {
-  const statusStyles = { 
-    Completed: "badge-success", 
-    Pending: "badge-warning", 
-    Processing: "badge-info", 
-    Failed: "badge-error" 
+  const statusStyles = {
+    Completed: "badge-success",
+    Pending: "badge-warning",
+    Processing: "badge-info",
+    Failed: "badge-error"
   };
+
+  const statusIcons = {
+    Completed: CheckCircle2,
+    Pending: Clock,
+    Processing: RefreshCw,
+    Failed: XCircle,
+  };
+
+  const Icon = statusIcons[status] || Clock;
+
   return (
     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3 rounded-2xl sm:rounded-3xl border border-white/10 bg-black/20 p-3.5 sm:p-4 hover:border-white/20 transition duration-200">
       <div className="min-w-0">
         <p className="font-semibold text-white text-sm sm:text-base truncate">{platform} • {service}</p>
         <p className="text-xs text-gray-400">{qty} units</p>
       </div>
-      <span className={`${statusStyles[status] || "badge-warning"} self-start sm:self-auto text-xs px-3 py-1 rounded-full`}>{status}</span>
+      <span className={`${statusStyles[status] || "badge-warning"} self-start sm:self-auto text-xs px-3 py-1 rounded-full flex items-center gap-1`}>
+        <Icon size={12} className={status === "Processing" ? "animate-spin" : ""} />
+        {status}
+      </span>
     </div>
   );
 }
