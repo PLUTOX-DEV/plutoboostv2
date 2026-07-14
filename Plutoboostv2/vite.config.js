@@ -6,42 +6,47 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'manifest.webmanifest'],
+      registerType: 'prompt', // Show prompt to update
+      includeAssets: ['pl.png', 'apple-touch-icon.png', 'site.webmanifest'],
       manifest: {
         name: 'PlutoBoost',
         short_name: 'PlutoBoost',
         description: 'Social Media Growth Platform',
         theme_color: '#7c3aed',
-        background_color: '#07091F',
+        background_color: '#0B0E2A',
         display: 'standalone',
+        start_url: '/',
         icons: [
           {
-            src: 'pwa-192x192.png',
+            src: 'pl.png',
+            sizes: '32x32',
+            type: 'image/png',
+          },
+          {
+            src: 'pl.png',
             sizes: '192x192',
             type: 'image/png',
           },
           {
-            src: 'pwa-512x512.png',
+            src: 'pl.png',
             sizes: '512x512',
             type: 'image/png',
           },
         ],
       },
-      // ===== FIX: Use injectManifest strategy =====
+      // Use custom service worker
       strategies: 'injectManifest',
       srcDir: 'src',
       filename: 'sw.js',
       injectManifest: {
         injectionPoint: undefined,
       },
-      // Disable workbox if still causing issues
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallback: 'index.html',
+        // Disable workbox, we'll handle everything in sw.js
+        globPatterns: [],
       },
       devOptions: {
-        enabled: false,
+        enabled: false, // Disable PWA in development
       },
     }),
   ],

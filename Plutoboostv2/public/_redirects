@@ -5,5 +5,19 @@
 /api/* /api/:splat 200
 
 # Assets - serve directly
+/assets/* /assets/:splat 200
 /images/* /images/:splat 200
 /fonts/* /fonts/:splat 200
+
+# Image files
+/*.png /:splat.png 200
+/*.jpg /:splat.jpg 200
+/*.jpeg /:splat.jpeg 200
+/*.svg /:splat.svg 200
+/*.webp /:splat.webp 200
+/*.ico /:splat.ico 200
+/*.webmanifest /:splat.webmanifest 200
+
+# JavaScript and CSS files
+/*.js /:splat.js 200
+/*.css /:splat.css 200
