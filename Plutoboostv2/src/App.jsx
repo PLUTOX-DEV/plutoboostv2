@@ -1,155 +1,279 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    
-    <!-- Prevent caching of HTML to avoid blank page issues -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" />
-    
-    <!-- Google Tag Manager -->
-    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-    new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-    j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-    'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','GTM-5KQPQ5CM');</script>
-    <!-- End Google Tag Manager -->
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/pl.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="/pl.png" sizes="16x16" />
-    <link rel="apple-touch-icon" href="/pl.png" sizes="180x180" />
-    <link rel="manifest" href="/site.webmanifest" />
-    <link rel="shortcut icon" href="/pl.png" />
-    <meta name="theme-color" content="#7c3aed" />
-    
-    <title>Plutoboost | Boost Your Business Growth & Automation</title>
-    <meta name="description" content="Plutoboost is the ultimate platform designed to help businesses scale with advanced analytics, marketing automation, and smart growth tools." />
-    <meta name="keywords" content="business growth, automation tools, analytics platform, scale business, Plutoboost, social media boost, marketing automation" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://plutoboost.netlify.app/" />
+import React, { useEffect, useContext, lazy, Suspense } from "react";
+import { Routes, Route, Navigate } from "react-router-dom";
+import UserContext from './context/UserContext';
+import LoadingSpinner from './components/LoadingSpinner';
 
-    <!-- Open Graph / Facebook / WhatsApp -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://plutoboost.netlify.app/" />
-    <meta property="og:title" content="Plutoboost | Boost Your Business Growth & Automation" />
-    <meta property="og:description" content="Scale your business seamlessly with Plutoboost's advanced analytics and automation tools. Get real followers, instant delivery, and 24/7 support." />
-    <meta property="og:image" content="https://plutoboost.netlify.app/og-image.jpg" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/jpeg" />
-    <meta property="og:site_name" content="Plutoboost" />
-    <meta property="og:locale" content="en_US" />
-    
-    <!-- WhatsApp specific -->
-    <meta property="og:image:alt" content="Plutoboost - Social Media Growth Platform" />
-    
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://plutoboost.netlify.app/" />
-    <meta name="twitter:title" content="Plutoboost | Boost Your Business Growth & Automation" />
-    <meta name="twitter:description" content="Scale your business seamlessly with Plutoboost's advanced analytics and automation tools." />
-    <meta name="twitter:image" content="https://plutoboost.netlify.app/og-image.jpg" />
-    <meta name="twitter:image:alt" content="Plutoboost - Social Media Growth Platform" />
-
-    <!-- WhatsApp/Telegram/LinkedIn specific -->
-    <meta property="og:image:secure_url" content="https://plutoboost.netlify.app/og-image.jpg" />
-    
-    <!-- Additional meta for better preview -->
-    <meta name="author" content="Plutoboost" />
-    <meta name="copyright" content="Plutoboost" />
-    <meta name="application-name" content="Plutoboost" />
-
-    <!-- Schema.org JSON-LD -->
-    <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "Plutoboost",
-        "url": "https://plutoboost.netlify.app",
-        "logo": "https://plutoboost.netlify.app/pl.png",
-        "image": "https://plutoboost.netlify.app/og-image.jpg",
-        "description": "An advanced platform designed to help businesses scale with automation and analytics.",
-        "sameAs": [
-          "https://twitter.com/plutoboost",
-          "https://instagram.com/plutoboost"
-        ],
-        "contactPoint": {
-          "@type": "ContactPoint",
-          "contactType": "customer support",
-          "email": "support@plutoboost.com"
-        }
-      }
-    </script>
-
-    <!-- WhatsApp preview fix - inline styles to ensure preview works -->
-    <style>
-      /* This ensures WhatsApp fetches the image properly */
-      .wa-preview-fix {
-        display: none;
-      }
-    </style>
-  </head>
-  <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript>
-      <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-5KQPQ5CM"
-      height="0" width="0" style="display:none;visibility:hidden"></iframe>
-    </noscript>
-    <!-- End Google Tag Manager (noscript) -->
-
-    <!-- WhatsApp preview fix - hidden element to ensure image is loaded -->
-    <div class="wa-preview-fix">
-      <img src="https://plutoboost.netlify.app/og-image.jpg" alt="Plutoboost Preview" />
-      <img src="https://plutoboost.netlify.app/pl.png" alt="Plutoboost Logo" />
+// Page Loader Component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-[#0B0E2A]">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-purple-500/30 border-t-purple-500 rounded-full animate-spin mx-auto mb-4" />
+      <p className="text-gray-400 text-sm">Loading Plutoboost...</p>
     </div>
+  </div>
+);
 
-    <!-- React root -->
-    <div id="root"></div>
-    
-    <!-- Error handling script -->
-    <script>
-      (function() {
-        // Handle loading errors
-        window.addEventListener('error', function(e) {
-          console.error('Page load error:', e.message);
-        });
+// Error Fallback Component
+const ErrorFallback = ({ error, resetError }) => (
+  <div className="flex items-center justify-center min-h-screen bg-[#0B0E2A] text-white p-6">
+    <div className="text-center max-w-md">
+      <div className="text-6xl mb-6">😅</div>
+      <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
+      <p className="text-gray-400 mb-6">
+        We're sorry for the inconvenience. Please try refreshing the page.
+      </p>
+      <button
+        onClick={resetError || (() => window.location.reload())}
+        className="bg-gradient-to-r from-purple-500 to-indigo-500 px-6 py-3 rounded-lg font-semibold hover:scale-105 transition-all duration-300 shadow-lg shadow-purple-500/25"
+      >
+        Refresh Page
+      </button>
+      {error && (
+        <p className="text-gray-500 text-xs mt-4">
+          Error: {error.message || 'Unknown error'}
+        </p>
+      )}
+    </div>
+  </div>
+);
 
-        // Handle unhandled promise rejections
-        window.addEventListener('unhandledrejection', function(e) {
-          console.error('Unhandled rejection:', e.reason);
-        });
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
 
-        // Unregister old service workers
-        if ('serviceWorker' in navigator) {
-          navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for (var i = 0; i < registrations.length; i++) {
-              registrations[i].unregister();
-            }
-          }).catch(function(err) {
-            console.log('Service worker unregister error:', err);
-          });
-        }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
 
-        // Clear old caches
-        if ('caches' in window) {
-          caches.keys().then(function(keys) {
-            keys.forEach(function(key) {
-              if (key.includes('plutoboost') || key.includes('vite') || key.includes('workbox')) {
-                caches.delete(key).then(function() {
-                  console.log('Cache deleted:', key);
-                });
+  componentDidCatch(error, errorInfo) {
+    console.error('App Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <ErrorFallback error={this.state.error} />;
+    }
+    return this.props.children;
+  }
+}
+
+function ProtectedRoute({ children }) {
+  const { user, loading } = useContext(UserContext);
+  if (loading) return <LoadingSpinner text="" />;
+  return user && user.role !== 'admin' ? children : <Navigate to="/login" />;
+}
+
+function AdminProtectedRoute({ children }) {
+  const { user, loading } = useContext(UserContext);
+  if (loading) return <LoadingSpinner text="" />;
+  return user && user.role === 'admin' ? children : <Navigate to="/admin-login" />;
+}
+
+// Lazy load Core Pages
+const Home = lazy(() => import('./pages/Home'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const AdminLogin = lazy(() => import('./pages/AdminLogin'));
+
+// Lazy load User Dashboard Pages
+const AdminDashboard = lazy(() => import('./pages/Admin'));
+const AddFunds = lazy(() => import("./pages/AddFunds"));
+const Orders = lazy(() => import("./pages/Orders.jsx"));
+const Dashboard2 = lazy(() => import("./pages/Dashboard"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Analytics = lazy(() => import('./pages/Analytics'));
+const Wallet = lazy(() => import('./pages/Wallet'));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+
+// Lazy load Admin Pages
+const AdminUsers = lazy(() => import("./components/AdminUsers"));
+const AdminOrders = lazy(() => import("./components/AdminOrders"));
+const AdminDeposits = lazy(() => import("./components/AdminDeposits"));
+const AdminSystem = lazy(() => import("./components/AdminSystem"));
+const AdminFees = lazy(() => import("./pages/AdminFees"));
+const AdminBlog = lazy(() => import("./components/AdminBlog"));
+const AdminNotifications = lazy(() => import("./components/AdminNotifications"));
+const AdminWatchdog = lazy(() => import("./components/AdminWatchdog"));
+
+// Lazy load Public Info Pages
+const PricingPage = lazy(() => import("./components/PricingPage"));
+const BlogPage = lazy(() => import("./components/BlogPage"));
+const PostPage = lazy(() => import("./components/PostPage"));
+const AffiliatePage = lazy(() => import("./components/AffiliatePage"));
+const ContactPage = lazy(() => import("./components/ContactPage"));
+const FeaturesInstagram = lazy(() => import("./pages/FeaturesInstagram"));
+const About = lazy(() => import("./pages/About"));
+const FeaturesYoutube = lazy(() => import("./pages/FeaturesYoutube"));
+const Careers = lazy(() => import("./pages/Careers"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const RefundPolicy = lazy(() => import("./pages/RefundPolicy"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const FeaturesAnalytics = lazy(() => import("./pages/FeaturesAnalytics"));
+
+// Service Worker Registration Helper
+const registerServiceWorker = () => {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          console.log('Service Worker registered successfully:', registration);
+          
+          registration.addEventListener('updatefound', () => {
+            const newWorker = registration.installing;
+            newWorker.addEventListener('statechange', () => {
+              if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                console.log('New version available!');
               }
             });
-          }).catch(function(err) {
-            console.log('Cache clear error:', err);
           });
-        }
-      })();
-    </script>
+        })
+        .catch((error) => {
+          console.log('Service Worker registration failed:', error);
+        });
+    });
 
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+  }
+};
+
+// Force unregister old service workers
+const unregisterOldServiceWorkers = async () => {
+  if ('serviceWorker' in navigator) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      for (const registration of registrations) {
+        if (registration.active && registration.active.scriptURL.includes('sw.js')) {
+          await registration.unregister();
+          console.log('Old service worker unregistered');
+        }
+      }
+    } catch (error) {
+      console.log('Service worker unregister error:', error);
+    }
+  }
+};
+
+// Clear old caches
+const clearOldCaches = async () => {
+  if ('caches' in window) {
+    try {
+      const keys = await caches.keys();
+      for (const key of keys) {
+        if (key.includes('plutoboost') || key.includes('vite') || key.includes('workbox')) {
+          await caches.delete(key);
+          console.log('Cache deleted:', key);
+        }
+      }
+    } catch (error) {
+      console.log('Cache clear error:', error);
+    }
+  }
+};
+
+export default function App() {
+  // Service Worker and Cache management
+  useEffect(() => {
+    const initServiceWorker = async () => {
+      await unregisterOldServiceWorkers();
+      await clearOldCaches();
+      registerServiceWorker();
+    };
+
+    initServiceWorker();
+
+    const handleOnline = () => {
+      console.log('App is online');
+    };
+
+    const handleOffline = () => {
+      console.log('App is offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Global error handler for unhandled rejections
+  useEffect(() => {
+    const handleUnhandledRejection = (event) => {
+      console.error('Unhandled Promise Rejection:', event.reason);
+    };
+
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Home/>}/>
+          <Route path="/login" element={<Login/>}/>
+          <Route path="/register" element={<Register/>}/>
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+
+          {/* User Dashboard Routes */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard2/></ProtectedRoute>}/>
+          <Route path="/addfunds" element={<ProtectedRoute><AddFunds/></ProtectedRoute>}/>
+          <Route path="/orders" element={<ProtectedRoute><Orders/></ProtectedRoute>}/>
+          <Route path="/analytics" element={<ProtectedRoute><Analytics/></ProtectedRoute>}/>
+          <Route path="/wallet" element={<ProtectedRoute><Wallet/></ProtectedRoute>}/>
+          <Route path="/notifications" element={<ProtectedRoute><NotificationsPage/></ProtectedRoute>}/>
+          <Route path="/settings" element={<ProtectedRoute><Settings/></ProtectedRoute>}/>
+          <Route path="/affiliate" element={<ProtectedRoute><AffiliatePage/></ProtectedRoute>}/>
+
+          {/* Public Info Routes */}
+          <Route path="/pricing/:platform" element={<PricingPage />} />
+          <Route path="/features/instagram" element={<FeaturesInstagram />} />
+          <Route path="/features/youtube" element={<FeaturesYoutube />} />
+          <Route path="/features/analytics" element={<FeaturesAnalytics />} />
+          <Route path="/blog" element={<BlogPage/>}/>
+          <Route path="/blog/:slug" element={<PostPage/>}/>
+          <Route path="/contact" element={<ContactPage/>}/>
+          <Route path="/about" element={<About/>}/>
+          <Route path="/careers" element={<Careers/>}/>
+          <Route path="/privacy-policy" element={<PrivacyPolicy/>}/>
+          <Route path="/terms-of-service" element={<TermsOfService/>}/>
+          <Route path="/refund-policy" element={<RefundPolicy/>}/>
+          <Route path="/help" element={<ContactPage/>}/>
+
+          {/* Admin Routes */}
+          <Route path="/admin" element={<AdminProtectedRoute><AdminDashboard/></AdminProtectedRoute>}/>
+          <Route path="/admin/users" element={<AdminProtectedRoute><AdminUsers /></AdminProtectedRoute>} />
+          <Route path="/admin/orders" element={<AdminProtectedRoute><AdminOrders /></AdminProtectedRoute>} />
+          <Route path="/admin/deposits" element={<AdminProtectedRoute><AdminDeposits /></AdminProtectedRoute>} />
+          <Route path="/admin/blog" element={<AdminProtectedRoute><AdminBlog /></AdminProtectedRoute>} />
+          <Route path="/admin/fees" element={<AdminProtectedRoute><AdminFees /></AdminProtectedRoute>} />
+          <Route path="/admin/system" element={<AdminProtectedRoute><AdminSystem /></AdminProtectedRoute>} />
+          <Route path="/admin/watchdog" element={<AdminProtectedRoute><AdminWatchdog /></AdminProtectedRoute>} />
+          <Route path="/admin/notifications" element={<AdminProtectedRoute><AdminNotifications /></AdminProtectedRoute>} />
+          
+          {/* 404 Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
+  );
+}
