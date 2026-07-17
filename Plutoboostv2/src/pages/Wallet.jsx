@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import api from "../api";
 import { 
@@ -21,6 +21,10 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Landmark,
+  Gift,
+  Award,
+  Activity,
 } from "lucide-react";
 import Sidebar from '../components/Sidebar';
 import UserContext from "../context/UserContext";
@@ -205,7 +209,7 @@ export default function Wallet() {
         </main>
       </div>
     );
-  };
+  }
 
   return (
     <div className="flex bg-[#07091F] text-white min-h-screen">
@@ -234,21 +238,23 @@ export default function Wallet() {
           </motion.div>
 
           {/* NOTIFICATION */}
-          {notification.show && (
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className={`p-3 sm:p-4 rounded-xl border text-sm sm:text-base ${
-                notification.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
-                notification.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
-                notification.type === 'info' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
-                'bg-amber-500/20 border-amber-500/30 text-amber-400'
-              }`}
-            >
-              {notification.message}
-            </motion.div>
-          )}
+          <AnimatePresence>
+            {notification.show && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className={`p-3 sm:p-4 rounded-xl border text-sm sm:text-base ${
+                  notification.type === 'success' ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' :
+                  notification.type === 'error' ? 'bg-red-500/20 border-red-500/30 text-red-400' :
+                  notification.type === 'info' ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' :
+                  'bg-amber-500/20 border-amber-500/30 text-amber-400'
+                }`}
+              >
+                {notification.message}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* BALANCE CARDS */}
           <motion.div 
@@ -481,6 +487,48 @@ export default function Wallet() {
               <div className="min-w-0">
                 <p className="font-medium text-xs sm:text-sm">Multiple Methods</p>
                 <p className="text-[10px] sm:text-xs text-gray-400">Card, Bank, Crypto</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* TOTAL SPENDING INSIGHT */}
+          <motion.div 
+            {...(isMobileView ? {} : { ...fadeInUp, transition: { delay: 0.5 } })}
+            className="glass rounded-2xl p-4 sm:p-6"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20">
+                <Activity size={18} className="text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-semibold">Spending Summary</h3>
+                <p className="text-xs text-gray-400">Quick overview of your wallet activity</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="text-center p-3 rounded-xl bg-white/5">
+                <p className="text-2xl font-bold text-purple-400">
+                  ₦{transactions.reduce((sum, t) => t.amount > 0 ? sum + t.amount : sum, 0).toLocaleString()}
+                </p>
+                <p className="text-[10px] text-gray-400">Total Deposits</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-white/5">
+                <p className="text-2xl font-bold text-amber-400">
+                  ₦{transactions.reduce((sum, t) => t.amount < 0 ? sum - t.amount : sum, 0).toLocaleString()}
+                </p>
+                <p className="text-[10px] text-gray-400">Total Spent</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-white/5">
+                <p className="text-2xl font-bold text-emerald-400">
+                  {transactions.filter(t => t.status === 'Completed').length}
+                </p>
+                <p className="text-[10px] text-gray-400">Completed</p>
+              </div>
+              <div className="text-center p-3 rounded-xl bg-white/5">
+                <p className="text-2xl font-bold text-amber-400">
+                  {transactions.filter(t => t.status === 'Pending').length}
+                </p>
+                <p className="text-[10px] text-gray-400">Pending</p>
               </div>
             </div>
           </motion.div>
